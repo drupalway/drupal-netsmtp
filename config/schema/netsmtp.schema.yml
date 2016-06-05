@@ -1,0 +1,37 @@
+netsmtp.settings:
+  type: config_object
+  label: 'Netsmtp settings'
+  mapping:
+    netsmtp_autoload_disable:
+      type: boolean
+      label: 'Disable autoload'
+
+    netsmtp_subject_encode:
+      type: boolean
+      label: 'Encode mail subjects'
+
+    netsmtp_debug_mime:
+      type: boolean
+      label: 'Sent data dumping'
+
+    netsmtp_debug_mime_path:
+      type: string
+      label: 'Sent data dumping path'
+
+    # @TODO: Add property
+    #netsmtp_proxy:
+
+    netsmtp_debug_trace:
+      type: boolean
+      label: 'Sent mail trace'
+
+    netsmtp_debug_trace_path:
+      type: string
+      label: 'Sent mail trace debug path'
+
+    netsmtp_catch:
+      type: sequence
+        label: 'Re-route emails'
+        sequence:
+          type: string
+          label: 'Re-route email'
