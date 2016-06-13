@@ -33,5 +33,5 @@ netsmtp.settings:
       type: sequence
         label: 'Re-route emails'
         sequence:
-          type: string
+          type: email
           label: 'Re-route email'

@@ -1,3 +1,37 @@
+
+    $mail_config = $this->configFactory->getEditable('system.mail');
+    $mail_system = $mail_config->get('interface.default');
+    
+    * @return \Drupal\Core\Mail\MailInterface
+       *   A mail plugin instance.
+       *
+       * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+       */
+      public function getInstance(array $options) {
+        $module = $options['module'];
+        $key = $options['key'];
+        $message_id = $module . '_' . $key;
+    
+        $configuration = $this->configFactory->get('system.mail')->get('interface');
+    
+        // Look for overrides for the default mail plugin, starting from the most
+        // specific message_id, and falling back to the module name.
+        if (isset($configuration[$message_id])) {
+          $plugin_id = $configuration[$message_id];
+        }
+        elseif (isset($configuration[$module])) {
+          $plugin_id = $configuration[$module];
+        }
+        else {
+          $plugin_id = $configuration['default'];
+        }
+    
+        if (empty($this->instances[$plugin_id])) {
+          $this->instances[$plugin_id] = $this->createInstance($plugin_id);
+        }
+        return $this->instances[$plugin_id];
+      }
+
 # Net SMTP
 
 SMTP connector using Net_SMTP PEAR library.
@@ -52,15 +86,20 @@ Then you can set the formatter this way:
       'default' => 'MimeMailSystem',
     );
 
-If you need to specify specific formatters for other modules, you
-can use this variable the exact same way you would use the core
-'mail_system' variable:
+If you need to specify formatters from specific mail plugin for all emails that sent by some module,
+or for specific email id (module_key, see MailManager::getInstance()) use variable below.
 
     $conf['netsmtp_proxy'] = array(
       'default' => 'MimeMailSystem',
       'MYMODULE' => 'SomeOtherFormatter',
       'MYMODULE_MYMAIL' => 'YetAnotherFormatter',
     );
+    
+    $conf['netsmtp_proxy'] = [
+      'default' => 'php_mail',
+      'user' => 'devel_mail_log',
+      'contact_page_autoreply' => 'null_mail',
+    ];
 
 And that's pretty much it.
 
@@ -133,7 +172,7 @@ mailjet or mandrill connection:
     );
 
 You can then force mails to go throught another server than default by
-setting the 'smtp_provider' key in the Drupal $message array when sending
+setting the 'netsmtp_provider' key in the Drupal $message array when sending
 mail.
 
 ### Overriding the proxy
