@@ -1,0 +1,26 @@
+notifications:
+  slack:
+    secure: JeQppkUR9W0Z4EdN9t6RW4oUM4XXSDgqz1rrPZvoxUGpsJc2RWSQxQ8wnYgZ3yRHR8Vn/0Prb9PyUHCfFbgwJMazlbKtcQEtLoG7nLIGFm3ro08k/EzrHiXXQbYWkAeG1dE9s1qqC0+0gKmvB9MLrR3LMg6VWe+cKs6N9SWyg28NVFCJvAu+5IZ3DhLpRayreTRuEYtiN92Pv84Jg8u4JB01W1hxIx/g/cLtzeoEc2YDGlysFV7CsHdZnzpBMWUcorg1LE6j5wNj4IDTGVd9SXjvwp5FogLNdlB7IRO3ayDUIAuBpt9VhkATGQmqVBSeTefILEwF3ff5EhEs94/hFxvu0tKoykppatATcTzoSjQsfLiArOxB2O/pWMFQamQtx8YDpr4pANyv7XOEzTC2LckKlN/gBhxVSezLnmhyL0eQy52tqm2SeV60XCB43KQmvRqOU40OG86BUiXqxWa7gl9NV2zODErm7Zzh+vOonq+0i8ToXroTcM8Qp63b6iJlMqRN8KnxbvGy5ZdMLMaP0626DWmN/VWyqyweF99WFWoQaM02jY+GfVohZo/2W6MN52J8KMR0rl/FWjUWHvBbm9tEl2+0plTVy6CSOAjz6h9lhxB14gmitlNjEzlLdz0lbdd17YBrwlivZpSslUk+AOwZho4QGLsmb2HUXmdjvCk=
+language: php
+sudo: false
+php:
+- 5.5
+- 5.6
+- 7
+- hhvm
+matrix:
+  fast_finish: true
+  allow_failures:
+  - php: hhvm
+env:
+  global:
+  - PATH="$PATH:$HOME/.composer/vendor/bin"
+
+mysql:
+  database: drupal_travis_db
+  username: root
+  encoding: utf8
+
+before_install:
+  - composer self-update
+  - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
