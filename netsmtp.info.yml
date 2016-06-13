@@ -4,4 +4,7 @@ description: 'SMTP connector using Net_SMTP PEAR library.'
 package: Mail
 core: 8.x
 configure: netsmtp.settings
+dependencies:
+ - mailsystem
+
 
