@@ -2,10 +2,6 @@ netsmtp.settings:
   type: config_object
   label: 'Netsmtp settings'
   mapping:
-    netsmtp_autoload_disable:
-      type: boolean
-      label: 'Disable autoload'
-
     netsmtp_subject_encode:
       type: boolean
       label: 'Encode mail subjects'
@@ -17,9 +13,6 @@ netsmtp.settings:
     netsmtp_debug_mime_path:
       type: string
       label: 'Sent data dumping path'
-
-    # @TODO: Add property
-    #netsmtp_proxy:
 
     netsmtp_debug_trace:
       type: boolean
