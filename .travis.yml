@@ -24,3 +24,4 @@ mysql:
 before_install:
   - composer self-update
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
+
