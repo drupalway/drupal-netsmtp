@@ -32,7 +32,7 @@ mysql:
 
 before_install:
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
-  - sudo apt-get update > /dev/null
+  - apt-get update > /dev/null
   - composer self-update
 
 install:
