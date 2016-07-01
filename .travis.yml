@@ -37,7 +37,7 @@ before_install:
 install:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
 
-  - composer global require drush/drush:dev-master
+  - composer global require drush/drush:8.*
   - composer global require --no-interaction "hirak/prestissimo:^0.3"
   - phpenv rehash
 
