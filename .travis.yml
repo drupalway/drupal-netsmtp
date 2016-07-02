@@ -16,6 +16,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - php: hhvm
+    - env: DRUPAL_VERSION=8.2.x-dev
 
 env:
   - DRUPAL_VERSION=8
