@@ -18,12 +18,8 @@ matrix:
     - php: hhvm
 
 env:
-  global:
-  - PATH="$PATH:$HOME/.composer/vendor/bin"
-  #- secure: MAILTRAP_INBOX_ID
-  #- secure: MAILTRAP_TOKEN
-  #- secure: MAILTRAP_SMTP_USERNAME
-  #- secure: MAILTRAP_SMTP_PASSWORD
+  - DRUPAL_VERSION=8
+  - DRUPAL_VERSION=8.2.x-dev
 
 mysql:
   database: drupal
@@ -44,7 +40,7 @@ install:
   - mysql -e 'create database drupal;'
 
   - cd ..
-  - drush dl drupal-8 --drupal-project-rename=drupal
+  - drush dl drupal-$DRUPAL_VERSION --drupal-project-rename=drupal
   - mv drupal-netsmtp drupal/modules
   - cd drupal
   - export DRUPAL_DIR=$(pwd)
