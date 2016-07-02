@@ -45,7 +45,7 @@ install:
 
   - cd ..
   - drush dl drupal-8 --drupal-project-rename=drupal
-  - mv netsmtp drupal/modules
+  - mv drupal-netsmtp drupal/modules
   - cd drupal
   - export DRUPAL_DIR=$(pwd)
 
@@ -54,4 +54,4 @@ install:
   - drush en -y netsmtp
 
 script:
-  - cd modules/netsmtp/src/Tests/Integration && php -f runtests.php
+  - cd modules/drupal-netsmtp/src/Tests/Integration && php -f runtests.php
