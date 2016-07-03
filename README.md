@@ -1,38 +1,4 @@
-
-    $mail_config = $this->configFactory->getEditable('system.mail');
-    $mail_system = $mail_config->get('interface.default');
-    
-    * @return \Drupal\Core\Mail\MailInterface
-       *   A mail plugin instance.
-       *
-       * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-       */
-      public function getInstance(array $options) {
-        $module = $options['module'];
-        $key = $options['key'];
-        $message_id = $module . '_' . $key;
-    
-        $configuration = $this->configFactory->get('system.mail')->get('interface');
-    
-        // Look for overrides for the default mail plugin, starting from the most
-        // specific message_id, and falling back to the module name.
-        if (isset($configuration[$message_id])) {
-          $plugin_id = $configuration[$message_id];
-        }
-        elseif (isset($configuration[$module])) {
-          $plugin_id = $configuration[$module];
-        }
-        else {
-          $plugin_id = $configuration['default'];
-        }
-    
-        if (empty($this->instances[$plugin_id])) {
-          $this->instances[$plugin_id] = $this->createInstance($plugin_id);
-        }
-        return $this->instances[$plugin_id];
-      }
-
-# Net SMTP
+# Net SMTP (Drupal 8)
 
 SMTP connector using Net_SMTP PEAR library.
 
@@ -66,52 +32,63 @@ which then will attempt to rebuild a MIME message.*
 In real life, it does not, it does deconstrut your MIME encoded message, but in
 a very wrong way, and breaks it in a lot cases.
 
+## Requirements
+
+[Mailsystem](https://www.drupal.org/project/mailsystem)
+
+Used to allow using of different backends for formatting and sending e-mails by default, per module and per mail key.
+
+Soft dependency on [composer_manager](https://www.drupal.org/project/composer_manager)
+ 
+## Installation
+This module defines external non-drupal dependencies via composer.json, 
+so you can use a drupal module [composer_manager](https://www.drupal.org/project/composer_manager) to install dependencies.
+
+**Procedure**
+
+- Download this module, composer_manager, mailsystem modules to the `modules/contrib` dir or similar.
+- Enable composer_manager module && clear cache
+- Enable netsmtp module
+
+
 ## Runtime configuration
 
 ### Drupal mail system configuration
 
-For your convenience, this module uses a specific Drupal mail system
-implementation that acts as a proxy which lets you use different
+This module uses a Mailsystem module as mail manager which lets you use different
 formatter and mailer.
 
-In order to use it, simply add to your settings.php file:
+#### Sender settings
+In order to use this module as a sender (mailer), simply add to your `settings.php` or `settings.local.php` file:
 
-    $conf['mail_system'] = array(
-      'default-system' => 'NetSmtp_MailSystemProxy'
-    );
+	$config['mailsystem.settings']['defaults']['sender'] = 'netsmtp_mail';
 
-Then you can set the formatter this way:
+If you want to use this mailer for some module that construct an email or specific mail key just set this
 
-    $conf['netsmtp_proxy'] = array(
-      'default' => 'MimeMailSystem',
-    );
+	/* For all mails that constructed by user module */
+	$config['mailsystem.settings']['modules']['user']['sender'] = 'netsmtp_mail';
+	/* Only for mail that constructed by user module and has a key password_reset
+	$config['mailsystem.settings']['modules']['user']['password_reset']['sender'] = 'netsmtp_mail';
 
-If you need to specify formatters from specific mail plugin for all emails that sent by some module,
-or for specific email id (module_key, see MailManager::getInstance()) use variable below.
+see more `core/modules/user/user.module/user_mail`, `core/modules/user/config/install/user.mail.yml`
 
-    $conf['netsmtp_proxy'] = array(
-      'default' => 'MimeMailSystem',
-      'MYMODULE' => 'SomeOtherFormatter',
-      'MYMODULE_MYMAIL' => 'YetAnotherFormatter',
-    );
-    
-    $conf['netsmtp_proxy'] = [
-      'default' => 'php_mail',
-      'user' => 'devel_mail_log',
-      'contact_page_autoreply' => 'null_mail',
-    ];
+See more for overriding algorithm `\Drupal\Core\Mail\MailManager::mail`
 
-And that's pretty much it.
+#### Formatter settings
+
+You can set the formatter this way:
+
+	$config['mailsystem.settings']['defaults']['formatter'] = 'php_mail';
 
 ### SMTP configuration
 
-At minima you would need to specify your SMTP server host:
+At minimal you would need to specify your SMTP server host:
 
-    $conf['netsmtp'] = array(
-      'default' => array(
+    $config['netsmtp.settings'] = [
+      'default' => [
         'hostname' => '1.2.3.4'
-      ),
-    );
+      ],
+    ];
 
 Hostname can be an IP or a valid hostname.
 
@@ -121,78 +98,60 @@ You can set the port if you wish using the 'port' key.
 
 If you need authentication, use this:
 
-    $conf['netsmtp'] = array(
-      'default' => array(
+    $config['netsmtp.settings'] = [
+      'default' => [
         'hostname' => 'smtp.provider.net',
         'username' => 'john',
         'password' => 'foobar',
-      ),
-    );
+      ],
+    ];
 
 And additionnaly, if you need to advertise yourself as a different hostname
 than the current localhost.localdomain, you can set the 'localhost' variable.
 
 An complete example:
 
-    $conf['netsmtp'] = array(
-      'default' => array(
+    $config['netsmtp.settings'] = [
+      'default' => [
         'hostname'  => 'smtp.provider.net',
         'port'      => 465,
         'use_ssl'   => true,
         'username'  => 'john',
         'password'  => 'foobar',
         'localhost' => 'host.example.tld',
-      ),
-    );
+      ],
+    ];
 
 Note that for now this only supports the PLAIN and LOGIN authentication
-methods, I am definitly too lazy to include the Auth_SASL PEAR package
+methods, I am definitely too lazy to include the Auth_SASL PEAR package
 as well.
 
-Additionnaly, you can change the 'use_ssl' paramater to the 'tls' value
+Additionally, you can change the 'use_ssl' paramater to the 'tls' value
 instead, and hope for the best to happen, it should force the Net::SMTP
 library to do a TLS connection instead.
 
 ### Advanced SMTP configuration
 
-Additionnaly you can define a set of servers, for example if you need a
+Additionally you can define a set of servers, for example if you need a
 mailjet or mandrill connection:
 
-    $conf['netsmtp'] = array(
-      'default' => array(
+    $config['netsmtp.settings'] = [
+      'default' => [
         'host' => '1.2.3.4',
         'ssl'  => true,
       ),
-      'mailjet' => array(
+      'mailjet' => [
         'host' => '1.2.3.4',
         'ssl'  => true,
         'user' => 'john',
         'pass' => 'foobar',
-      ),
-    );
+      ],
+    ];
 
 You can then force mails to go throught another server than default by
-setting the 'netsmtp_provider' key in the Drupal $message array when sending
-mail.
+settings per mail module/key `$config['netsmtp.settings']['module']['key'][...]`
 
-### Overriding the proxy
-
-Additionnaly, if you have specific business needs, you can override the
-proxy class, start by writing your own such as:
-
-    MyProxy extends NetSmtp_MailSystemProxy
-    {
-        // Do something
-    }
-
-Then register it in any autoloader.
-
-Then, tell the net-smtp module to use it instead of the stock provided one
-into your settings.php file:
-
-    $conf['mail_system'] = array(
-      'default-system' => 'MyProxy'
-    );
+See more here `\Drupal\netsmtp\Plugin\Mail\NetSmtpMail::getInstance`
 
 ### Additional configuration
 
@@ -200,7 +159,7 @@ Per default this module uses the Drupal native function correctly encode
 mail subjects, if you use a formatter that does the job for you, set
 the _netsmtp\_subject\_encode_ to false to deactivate this behavior:
 
-    $conf['netsmtp_subject_encode'] = false;
+    $config['netsmtp.settings']['netsmtp_subject_encode'] = false;
 
 ### Debugging
 
@@ -210,16 +169,16 @@ This feature is useful when working in a development phase where you don't
 want mails to be sent to their real recipients. In order to activate it
 just set:
 
-    $conf['netsmtp_catch'] = 'someuser@example.com';
+    $config['netsmtp.settings']['netsmtp_catch'] = 'someuser@example.com';
 
 Moreover, you can set multiple recipients:
 
-    $conf['netsmtp_catch'] = array(
+    $config['netsmtp.settings']['netsmtp_catch'] = [
       'user1@example.com',
       'user2@example.com',
       'user3@example.com',
       // ...
-    );
+    ];
 
 Be careful that this is a debug feature and the recipient user addresses
 won't be processed in any way, which means that you can set a mail address
@@ -230,60 +189,31 @@ containing a ',' character, it won't be escaped.
 Additionally you can enable a debug output that will dump all MIME encoded
 messages this module will send onto the file system. Just set:
 
-    $conf['netsmtp_debug_mime'] = true;
+    $config['netsmtp.settings']['netsmtp_debug_mime'] = true;
 
 And every mail will be dumped into the following Drupal temp folder:
 
     temporary://netsmtp/YYYY-MM-DD/
 
-Additionnaly you can change the path using this variable:
+Additionally you can change the path using this variable:
 
-    $conf['netsmtp_debug_mime_path'] = 'private://netsmtp';
+    $config['netsmtp.settings']['netsmtp_debug_mime_path'] = 'private://netsmtp';
 
 #### Sent mail trace
 
 This probably should belong to another module, but if you need extensive mail
 tracing logging, you can enable:
 
-    $conf['netsmtp_debug_trace'] = true;
+    $config['netsmtp.settings']['netsmtp_debug_trace'] = true;
 
 This will activate a _hook\_mail\_alter()_ implementation that will log every
-mail activity sent by the plateform in a single file:
+mail activity sent by the platform in a single file:
 
     temporary://netsmtp/netsmtp-trace-YYYY-MM-DD.log
 
 In this file you'll find various internal Drupal modules information about the
 mails being sent, including the stack trace at the time the mail is beint sent.
 
-Additionnaly you can change the path using this variable:
+Additionally you can change the path using this variable:
 
-    $conf['netsmtp_debug_trace_path'] = 'private://netsmtp';
-
-## Bundled libraries
-
-PEAR and other libraries are included into this module for the sake of
-simplicity.
-
-### PEAR
-
-PEAR v1.9.5 - Licensed under The New BSD License
-
-Note that if you have a PHP compiled with the PEAR option native one will
-be used instead. This should not be a problem.
-
-### Net_Socket
-
-Net_Socket v1.0.14 - Licensed under the PHP Licence v3.01
-
-### Net_SMTP 
-
-Net_SMTP v1.6.2 - Licensed under the PHP Licence v3.01
-
-## Note about the autoloader
-
-Feel free to provide your own version of bundled libraries, especially
-if you need some other modules to share it. You only need to replace this
-module autoloader with your own.
-
-If you experience any problems for replacing this module autoloader,
-just set the 'netsmtp_autoload_disable' variable to true.
+    $config['netsmtp.settings']['netsmtp_debug_trace_path'] = 'private://netsmtp';
