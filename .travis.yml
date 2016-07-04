@@ -54,4 +54,4 @@ install:
   - drush cr
 
 script:
-  - cd modules/drupal-netsmtp/src/Tests/Integration && php -f -e runtests.php
+  - cd modules/drupal-netsmtp/src/Tests/Integration && php -e -f runtests.php
