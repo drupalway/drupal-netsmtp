@@ -87,11 +87,17 @@ class CanSendEmailToMailtrapSmtp {
     $mail = reset($data);
 
     if (404 == $response->getStatusCode()) {
-      throw new \ErrorException(sprintf('Can\'t find a email with email subject: %s', $message_key));
+      throw new \ErrorException(
+        sprintf('Can\'t find a email with email subject: %s', $message_key),
+        1
+      );
     }
 
     if ($mail->subject != $message_key) {
-      throw new \ErrorException(sprintf('There is no email with email subject: %s', $message_key));
+      throw new \ErrorException(
+        sprintf('There is no email with email subject: %s', $message_key),
+        1
+      );
     }
   }
 

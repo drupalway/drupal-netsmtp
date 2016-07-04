@@ -28,6 +28,8 @@ mysql:
   encoding: utf8
 
 before_install:
+  - export MAILSYSTEM_VERSION=8.x-4.0
+  - test ${$DRUPAL_VERSION} == "8" || export MAILSYSTEM_VERSION=8.x-4.x-dev
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
   - composer self-update
 
@@ -45,11 +47,10 @@ install:
   - mv drupal-netsmtp drupal/modules
   - cd drupal
   - export DRUPAL_DIR=$(pwd)
-
   # Install drupal default profile
   - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
+  - drush dl mailsystem-$MAILSYSTEM_VERSION -y
   - drush en -y netsmtp
 
 script:
-  - cd modules/drupal-netsmtp/src/Tests/Integration
-  - php -f runtests.php
+  - cd modules/drupal-netsmtp/src/Tests/Integration && php -f runtests.php
