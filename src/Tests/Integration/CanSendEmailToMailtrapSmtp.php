@@ -64,11 +64,9 @@ class CanSendEmailToMailtrapSmtp {
       $result = $this->mailManager->mail('netsmtp', 'test_message');
       $message_key = \Drupal::state()->get('netsmtp.last_message_id');
     }
-    catch (\Exception $e) {
-      throw new \RuntimeException(
-        sprintf('Can\'t send an email. Details: %s', $e->getMessage()),
-        1
-      );
+    catch (\RuntimeException $e) {
+      echo sprintf('Can\'t send an email. Details: %s', $e->getMessage());
+      exit(1);
     }
 
     $inbox_url = implode('/', [
@@ -90,17 +88,13 @@ class CanSendEmailToMailtrapSmtp {
     $mail = reset($data);
 
     if (404 == $response->getStatusCode()) {
-      throw new \ErrorException(
-        sprintf('Can\'t find a email with email subject: %s', $message_key),
-        1
-      );
+      echo sprintf('Can\'t find a email with email subject: %s', $message_key);
+      exit(1);
     }
 
     if ($mail->subject != $message_key) {
-      throw new \ErrorException(
-        sprintf('There is no email with email subject: %s', $message_key),
-        1
-      );
+      sprintf('There is no email with email subject: %s', $message_key);
+      exit(1);
     }
   }
 
