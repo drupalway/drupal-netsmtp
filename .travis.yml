@@ -29,7 +29,7 @@ mysql:
 
 before_install:
   - export MAILSYSTEM_VERSION="8.x-4.0"
-  - test ${$DRUPAL_VERSION} == "8" || export MAILSYSTEM_VERSION="8.x-4.x-dev"
+  - test ${DRUPAL_VERSION} == "8" || export MAILSYSTEM_VERSION="8.x-4.x-dev"
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
   - composer self-update
 
