@@ -65,7 +65,7 @@ class CanSendEmailToMailtrapSmtp {
       $message_key = \Drupal::state()->get('netsmtp.last_message_id');
     }
     catch (\RuntimeException $e) {
-      file_put_contents('php://stderr', sprintf('Can\'t send an email. Details: %s', $e->getMessage());
+      file_put_contents('php://stderr', sprintf('Can\'t send an email. Details: %s', $e->getMessage()));
       exit(1);
     }
 
