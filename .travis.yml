@@ -51,6 +51,7 @@ install:
   - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
   - drush dl mailsystem-$MAILSYSTEM_VERSION -y
   - drush en -y netsmtp
+  - drush cr
 
 script:
-  - cd modules/drupal-netsmtp/src/Tests/Integration && php -f runtests.php
+  - cd modules/drupal-netsmtp/src/Tests/Integration && php -f -e runtests.php
