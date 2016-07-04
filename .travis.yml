@@ -53,4 +53,5 @@ install:
   - drush en -y netsmtp
 
 script:
-  - cd modules/drupal-netsmtp/src/Tests/Integration && php -f runtests.php
+  - cd modules/drupal-netsmtp/src/Tests/Integration
+  - php -f runtests.php
