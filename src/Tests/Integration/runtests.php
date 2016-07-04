@@ -8,7 +8,6 @@ use Drupal\Core\DrupalKernel;
 use Symfony\Component\HttpFoundation\Request;
 
 $drupal_dir = getenv('DRUPAL_DIR');
-var_dump($drupal_dir);
 
 static $kernel;
 
