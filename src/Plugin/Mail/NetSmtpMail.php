@@ -1,15 +1,16 @@
 <?php
-
 /**
+ * @file
  * Net_SMTP mailer.
  *
  * Beware that this class awaits an already formatted MIME mail as input.
- * This means you probably need another mail formatter system such as the MimeMail
- * module in order to generate the fully compliant MIME version.
+ * This means you probably need another mail formatter system such as
+ * the MimeMail module in order to generate the fully compliant MIME version.
  *
  * Most functions are protected, so that anyone that wants to change some
  * behavior can still extend this object and modify whatever they want.
  */
+
 namespace Drupal\netsmtp\Plugin\Mail;
 
 use Net_SMTP;
@@ -18,6 +19,10 @@ use PEAR_Error;
 use Drupal\Core\Mail\MailInterface;
 
 /**
+ * Class NetSmtpMail.
+ *
+ * @package Drupal\netsmtp\Plugin\Mail
+ *
  * Implements Net_SMTP mail plugin with additional log features.
  *
  * @Mail(
@@ -28,29 +33,32 @@ use Drupal\Core\Mail\MailInterface;
  */
 class NetSmtpMail implements MailInterface {
   /**
-   * Default provider key
+   * Default provider key.
    */
   const PROVIDER_DEFAULT = 'default';
-
   /**
-   * Default SSL port
+   * Default SSL port.
    */
   const DEFAULT_SSL_PORT = 465;
-
   /**
-   * Drupal to explode regex
+   * Drupal to explode regex.
    */
   const REGEX_TO = '';
-
   /**
+   * Pear handler.
+   *
    * @var PEAR
    */
   private $PEAR;
-
+  /**
+   * Configuration handler.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
   private $config;
 
   /**
-   * Default constructor
+   * NetSmtpMail constructor.
    */
   public function __construct() {
     // Fuck hate PEAR.
@@ -59,35 +67,38 @@ class NetSmtpMail implements MailInterface {
   }
 
   /**
-   * Attempt to find email addresses from input
+   * Attempt to find email addresses from input.
    *
    * @param string $string
+   *   Input data string.
    *
-   * @return string[]
+   * @return array
+   *   Handled data array.
    *
    * @see MailManager::mail()
    *   For input of what this function is supposed to accept.
    */
   protected function catchAddressesInto($string) {
-    $ret = array();
+    $ret = [];
 
     if (empty($string)) {
-      return null; // Please bitch... Not my problem
+      // Please bitch... Not my problem.
+      return NULL;
     }
 
     // This should be enough to remove "Name".
     $string = preg_replace('/"[^\"]+"/', '', $string);
 
-    // And thus, there is no risk anymore to find ',' except as separator
+    // And thus, there is no risk anymore to find ',' except as separator.
     foreach (explode(",", $string) as $addr) {
-      $m = array();
+      $m = [];
       if (preg_match('/<([^\>]+)?>/', $addr, $m)) {
-          $ret[] = trim($m[1]);
-      } else {
-          $ret[] = trim($addr);
+        $ret[] = trim($m[1]);
+      }
+      else {
+        $ret[] = trim($addr);
       }
     }
-
     return $ret;
   }
 
@@ -95,7 +106,7 @@ class NetSmtpMail implements MailInterface {
    * Format an error and send it to logger service.
    *
    * @param mixed $e
-   *
+   *   Exception object.
    * @param string $type
    *   Types: error or warning.
    */
@@ -108,7 +119,7 @@ class NetSmtpMail implements MailInterface {
       // viable PHP SMTP library exists outside of Net_SMTP. Even
       // the Roundcube webmail client understood it.
       if ($debug = $e->getDebugInfo()) {
-        $message = $e->getMessage() . ', DEBUG:<br/><pre>' . print_r($debug, true) . '</pre>';
+        $message = $e->getMessage() . ', DEBUG:<br/><pre>' . print_r($debug, TRUE) . '</pre>';
       }
       else {
         $message = $e->getMessage();
@@ -118,86 +129,90 @@ class NetSmtpMail implements MailInterface {
       $message = 'Exception ' . get_class($e) . ': ' . $e->getMessage() . '<br/><pre>' . $e->getTraceAsString() . '</pre>';
     }
     else {
-      $message = 'UNKNOWN ERROR, DEBUG:<br/><pre>' . print_r($e, true) . '</pre>';
+      $message = 'UNKNOWN ERROR, DEBUG:<br/><pre>' . print_r($e, TRUE) . '</pre>';
     }
 
-    if (in_array($type, array('error', 'warning'))) {
+    if (in_array($type, ['error', 'warning'])) {
       \Drupal::logger('netsmtp')->{$type}($message);
     }
   }
 
   /**
-   * Get Net_SMTP instance
+   * Get Net_SMTP instance.
    *
    * Returned instance must be authenticated and connected.
    *
-   * @return Net_SMTP
-   *   Or null if instance could not be created or could not connect
-   *   to SMTP server
+   * @param string $module
+   *   Module name.
+   * @param string $key
+   *   Key name.
+   *
+   * @return Net_SMTP|null
+   *   Net_SMTP handler or null if instance could not be created
+   *   or could not connect to SMTP server.
    */
   protected function getInstance($module, $key) {
-    $isTLS = false;
+    $is_tls = FALSE;
 
     // SMTP server configurations per module, key.
-    $server_id_list = array(
+    $server_id_list = [
       $module . '.' . $key,
       $module,
       $key,
-      self::PROVIDER_DEFAULT
-    );
+      self::PROVIDER_DEFAULT,
+    ];
 
-    foreach($server_id_list as $provider) {
+    foreach ($server_id_list as $provider) {
       $provider_config = $this->config->get($provider);
       if (!is_null($provider_config)) {
         break;
       }
     }
 
-
-    if (empty($provider_config)) {
+    if (empty($provider_config) && isset($provider)) {
       $this->setError(sprintf("Provider '%s' does not exists, fallback on default", $provider), 'warning');
-      return null;
+      return NULL;
     }
 
-    if (empty($provider_config['hostname'])) {
+    if (empty($provider_config['hostname']) && isset($provider)) {
       $this->setError(sprintf("Provider '%s' has no hostname", $provider));
-      return null;
+      return NULL;
     }
 
-    $info = array_filter($provider_config) + array(
-      'port'      => null,
-      'username'  => null,
-      'use_ssl'   => false,
+    $info = array_filter($provider_config) + [
+      'port'      => NULL,
+      'username'  => NULL,
+      'use_ssl'   => FALSE,
       'password'  => '',
-      'localhost' => null,
-    );
+      'localhost' => NULL,
+    ];
 
     if ($info['use_ssl']) {
       if ('tls' === $info['use_ssl']) {
-          $info['hostname'] = 'tls://' . $info['hostname'];
-          $isTLS = true;
-      } else {
-          $info['hostname'] = 'ssl://' . $info['hostname'];
+        $info['hostname'] = 'tls://' . $info['hostname'];
+        $is_tls = TRUE;
+      }
+      else {
+        $info['hostname'] = 'ssl://' . $info['hostname'];
       }
       if (empty($info['port'])) {
-          $info['port'] = self::DEFAULT_SSL_PORT;
+        $info['port'] = self::DEFAULT_SSL_PORT;
       }
     }
 
-    // Attempt connection
+    // Attempt connection.
     $smtp = new Net_SMTP($info['hostname'], $info['port'], $info['localhost']);
     if ($this->PEAR->isError($e = $smtp->connect())) {
       $this->setError($e);
-      return null;
+      return NULL;
     }
 
     if (!empty($info['username'])) {
-      if ($this->PEAR->isError($e = $smtp->auth($info['username'], $info['password'], '', $isTLS))) {
+      if ($this->PEAR->isError($e = $smtp->auth($info['username'], $info['password'], '', $is_tls))) {
         $this->setError($e);
-        return null;
+        return NULL;
       }
     }
-
     // Finally! We did it I guess.
     return $smtp;
   }
@@ -207,15 +222,15 @@ class NetSmtpMail implements MailInterface {
    */
   public function format(array $message) {
     \Drupal::logger('netsmtp')->error("I am not meant to format messages, sorry");
-      return false;
-    }
+    return FALSE;
+  }
 
   /**
    * {@inheritdoc}
    */
   public function mail(array $message) {
     if (!$smtp = $this->getInstance($message['module'], $message['key'])) {
-      return false;
+      return FALSE;
     }
 
     // SMTP basically does not care about message format. MIME is the
@@ -233,7 +248,7 @@ class NetSmtpMail implements MailInterface {
     }
 
     if (empty($message['headers']['Subject'])) {
-      if ($this->config->get('netsmtp_subject_encode', true)) {
+      if ($this->config->get('netsmtp_subject_encode', TRUE)) {
         $message['headers']['Subject'] = mime_header_encode($message['subject']);
       }
       else {
@@ -246,54 +261,60 @@ class NetSmtpMail implements MailInterface {
 
     if (empty($from)) {
       $this->setError("FROM invalid or not found");
-      return false;
+      return FALSE;
     }
     if ($this->PEAR->isError($e = $smtp->mailFrom($from))) {
       $this->setError($e);
-      return false;
+      return FALSE;
     }
 
-    $atLeastOne = false;
+    $at_least_one = FALSE;
     foreach ($this->catchAddressesInto($message['to']) as $to) {
       if ($this->PEAR->isError($e = $smtp->rcptTo($to))) {
         $this->setError($e);
-      } else {
-        $atLeastOne = true;
+      }
+      else {
+        $at_least_one = TRUE;
       }
     }
-    if (!$atLeastOne) {
+    if (!$at_least_one) {
       $this->setError("No RCPT was accepted by the SMTP server");
-      return false;
+      return FALSE;
     }
 
-    // Also note that the Net_SMTP library wants headers to be a string too
+    // Also note that the Net_SMTP library wants headers to be a string too.
     $headers = array();
     foreach ($message['headers'] as $name => $value) {
       if (is_array($value)) {
         foreach ($value as $_value) {
-          $headers[] = $name . ": " . $_value;
+          $headers[] = "$name: $_value";
         }
-      } else {
-        $headers[] = $name . ": " . $value;
+      }
+      else {
+        $headers[] = "$name: $value";
       }
     }
 
     // And the ugly part is, append body like a real Viking would do!
-    $status = true;
-
+    $status = TRUE;
     if ($this->PEAR->isError($e = $smtp->data($message['body'], implode("\n", $headers)))) {
       $this->setError($e);
-      $status = false;
+      $status = FALSE;
     }
 
     if ($this->config->get('netsmtp_debug_mime')) {
-        $path = $this->config->get('netsmtp_debug_mime_path');
-        $path .= '/' . date('Y-m-d');
-        file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
-        file_put_contents($path . '/' . $smtp->host . '-' . date('Y_m_d-H_i_s'). '.mbox', implode("\n", $headers) . "\n\n" . $message['body']);
+      $path = $this->config->get('netsmtp_debug_mime_path');
+      $path .= '/' . date('Y-m-d');
+      file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+      // Prepare the data for putting into the file.
+      $filename = $path . '/' . $smtp->host . '-' . date('Y_m_d-H_i_s') . '.mbox';
+      $data = implode("\n", $headers) . "\n\n" . $message['body'];
+      // Put the data into a specific file.
+      file_put_contents($filename, $data);
     }
-
+    // Disconnect the smtp.
     $smtp->disconnect();
     return $status;
   }
+
 }

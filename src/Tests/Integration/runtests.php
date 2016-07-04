@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Test runner.
+ */
 
 use Drupal\Core\DrupalKernel;
 use Symfony\Component\HttpFoundation\Request;

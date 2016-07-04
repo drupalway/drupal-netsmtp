@@ -7,6 +7,7 @@
 define('NETSMTP_SETTINGS', 'netsmtp.settings');
 
 use Drupal\Core\Url;
+
 /**
  * Implements hook_mail().
  */
@@ -20,9 +21,6 @@ function netsmtp_mail($key, &$message) {
       break;
   }
 }
-
-
-
 
 /**
  * Implements hook_mail_alter().
@@ -46,20 +44,19 @@ function netsmtp_mail_alter(&$message) {
     $data[] = ob_get_clean();
     $data[] = '';
 
-    file_put_contents($filename, implode("\n", $data), FILE_APPEND | LOCK_EX );
+    file_put_contents($filename, implode("\n", $data), FILE_APPEND | LOCK_EX);
   }
 
   if ($recipient = $config->get('netsmtp_catch')) {
 
     $front_page_url = Url::fromUri('base:/', ['absolute' => TRUE]);
-    $message['headers']['X-Catched-Mail-Key'] = isset($message['id']) ? $message['id'] : null;
+    $message['headers']['X-Catched-Mail-Key'] = isset($message['id']) ? $message['id'] : NULL;
     $message['headers']['X-Catched-Website'] = $front_page_url->toString();
     $message['headers']['X-Catched-Original-To'] = $message['to'];
     $message['to'] = is_array($recipient) ? implode(',', $recipient) : $recipient;
 
     foreach ($message['headers'] as $header => $value) {
       switch (strtolower($header)) {
-
         case 'cc':
         case 'bcc':
           unset($message['headers'][$header]);
@@ -69,4 +66,3 @@ function netsmtp_mail_alter(&$message) {
     }
   }
 }
-

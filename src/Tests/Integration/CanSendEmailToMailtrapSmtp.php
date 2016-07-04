@@ -1,27 +1,65 @@
 <?php
+/**
+ * @file
+ * Class CanSendEmailToMailtrapSmtp.
+ */
 
 namespace Drupal\netsmtp\Tests\Integration;
 
+use Drupal\Core\DrupalKernel;
 use GuzzleHttp\Client;
 
 define('NETSMTP_MAILTRAP_API_ENDPOINT', 'https://mailtrap.io/api/v1');
 
-class CanSendEmailToMailtrapSmtp  {
+/**
+ * Class CanSendEmailToMailtrapSmtp.
+ *
+ * @package Drupal\netsmtp\Tests\Integration
+ */
+class CanSendEmailToMailtrapSmtp {
+  /**
+   * Drupal Kernel.
+   *
+   * @var DrupalKernel
+   */
   private $kernel;
+  /**
+   * Token value.
+   *
+   * @var string
+   */
+  private $smtpToken;
+  /**
+   * Inbox ID.
+   *
+   * @var string
+   */
+  private $smtpInboxId;
+  /**
+   * Mail manager.
+   *
+   * @var \Drupal\Core\Mail\MailManager
+   */
+  private $mailManager;
 
-  private $smtp_token;
-
-  private $smtp_inbox_id;
-
-  public function __construct($kernel) {
-    $this->kernel = $kernel;
-    $this->mailManager = $this->kernel->getContainer()->get('plugin.manager.mail');
-    $this->smtp_inbox_id = getenv('MAILTRAP_INBOX_ID');
-    $this->smtp_token = getenv('MAILTRAP_TOKEN');
+  /**
+   * CanSendEmailToMailtrapSmtp constructor.
+   *
+   * @param DrupalKernel $kernel
+   *   Drupal Kernel.
+   */
+  public function __construct(DrupalKernel $kernel) {
+    // Prepare the initial properties.
+    $this->kernel       = $kernel;
+    $this->mailManager  = $this->kernel->getContainer()->get('plugin.manager.mail');
+    $this->smtpInboxId  = getenv('MAILTRAP_INBOX_ID');
+    $this->smtpToken    = getenv('MAILTRAP_TOKEN');
   }
-  
+
+  /**
+   * Test email sending.
+   */
   public function testSendEmail() {
-    
     try {
       $result = $this->mailManager->mail('netsmtp', 'test_message');
       $message_key = \Drupal::state()->get('netsmtp.last_message_id');
@@ -30,19 +68,19 @@ class CanSendEmailToMailtrapSmtp  {
       throw new \RuntimeException(sprintf('Can\'t send an email. Details: %s', $e->getMessage()));
     }
 
-    $inbox_url = implode('/', array(
+    $inbox_url = implode('/', [
       NETSMTP_MAILTRAP_API_ENDPOINT,
-      'inboxes', 
-      $this->smtp_inbox_id
-    ));
-    
-    $client = new Client([
-      'base_uri' => $inbox_url . '/'
+      'inboxes',
+      $this->smtpInboxId,
     ]);
-    
+
+    $client = new Client([
+      'base_uri' => $inbox_url . '/',
+    ]);
+
     $response = $client->request('GET', 'messages', [
       'query'   => ['search' => $message_key],
-      'headers' => ['Api-Token' => $this->smtp_token]
+      'headers' => ['Api-Token' => $this->smtpToken],
     ]);
 
     $data = \GuzzleHttp\json_decode($response->getBody()->getContents());
@@ -52,12 +90,9 @@ class CanSendEmailToMailtrapSmtp  {
       throw new \ErrorException(sprintf('Can\'t find a email with email subject: %s', $message_key));
     }
 
-    if ($mail->subject == $message_key) {
-      return;
-    }
-    else {
+    if ($mail->subject != $message_key) {
       throw new \ErrorException(sprintf('There is no email with email subject: %s', $message_key));
     }
   }
-}
 
+}
