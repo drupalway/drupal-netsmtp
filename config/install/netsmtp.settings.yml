@@ -1,0 +1,13 @@
+netsmtp_autoload_disable: false
+
+netsmtp_subject_encode: false
+
+netsmtp_debug_mime: false
+
+netsmtp_debug_mime_path: 'private://netsmtp'
+
+netsmtp_debug_trace: false
+
+netsmtp_debug_trace_path: 'private://netsmtp'
+
+netsmtp_catch: []

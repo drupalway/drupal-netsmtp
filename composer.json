@@ -1,0 +1,25 @@
+{
+  "name": "drupal/netsmtp",
+  "description": "SMTP connector using Net_SMTP PEAR library.",
+  "type": "drupal-module",
+  "authors": [
+    {
+      "email": "contact@makina-corpus.com",
+      "name": "Makina Corpus",
+      "role": "Maintainer"
+    },
+    {
+      "email": "vlmo@drupalway.net",
+      "name": "Vlad Moyseenko",
+      "role": "Co-maintainer",
+      "homepage":"https://www.drupal.org/u/vladdancer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/makinacorpus/drupal-netsmtp/issues",
+    "source": "https://github.com/pear/Mail"
+  },
+  "require": {
+    "pear/net_smtp": "^1.7"
+  }
+}

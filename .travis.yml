@@ -1,0 +1,63 @@
+notifications:
+  slack:
+    secure: JeQppkUR9W0Z4EdN9t6RW4oUM4XXSDgqz1rrPZvoxUGpsJc2RWSQxQ8wnYgZ3yRHR8Vn/0Prb9PyUHCfFbgwJMazlbKtcQEtLoG7nLIGFm3ro08k/EzrHiXXQbYWkAeG1dE9s1qqC0+0gKmvB9MLrR3LMg6VWe+cKs6N9SWyg28NVFCJvAu+5IZ3DhLpRayreTRuEYtiN92Pv84Jg8u4JB01W1hxIx/g/cLtzeoEc2YDGlysFV7CsHdZnzpBMWUcorg1LE6j5wNj4IDTGVd9SXjvwp5FogLNdlB7IRO3ayDUIAuBpt9VhkATGQmqVBSeTefILEwF3ff5EhEs94/hFxvu0tKoykppatATcTzoSjQsfLiArOxB2O/pWMFQamQtx8YDpr4pANyv7XOEzTC2LckKlN/gBhxVSezLnmhyL0eQy52tqm2SeV60XCB43KQmvRqOU40OG86BUiXqxWa7gl9NV2zODErm7Zzh+vOonq+0i8ToXroTcM8Qp63b6iJlMqRN8KnxbvGy5ZdMLMaP0626DWmN/VWyqyweF99WFWoQaM02jY+GfVohZo/2W6MN52J8KMR0rl/FWjUWHvBbm9tEl2+0plTVy6CSOAjz6h9lhxB14gmitlNjEzlLdz0lbdd17YBrwlivZpSslUk+AOwZho4QGLsmb2HUXmdjvCk=
+
+language: php
+
+sudo: false
+
+php:
+  - 5.5
+  - 5.6
+  - 7
+  - hhvm
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - php: hhvm
+    - env: DRUPAL_VERSION=8.2.x-dev
+
+env:
+  - DRUPAL_VERSION=8
+  - DRUPAL_VERSION=8.2.x-dev
+
+mysql:
+  database: drupal
+  username: root
+  encoding: utf8
+
+before_install:
+  - export MAILSYSTEM_VERSION="8.x-4.0"
+  - test ${DRUPAL_VERSION} == "8" || export MAILSYSTEM_VERSION="8.x-4.x-dev"
+  - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
+  - composer self-update
+
+install:
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+  - composer global require drush/drush:8.*
+  - composer global require --no-interaction "hirak/prestissimo:^0.3"
+  - phpenv rehash
+
+  - cd ..
+  - drush dl drupal-$DRUPAL_VERSION --drupal-project-rename=drupal
+  - mv drupal-netsmtp drupal/modules
+  - cd drupal
+  # Install drupal default profile
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database drupal;'
+  - php -d sendmail_path=`which true` ~/.composer/vendor/bin/drush.php --yes core-quick-drupal --profile=testing --no-server --verbose --db-url=mysql://root:@127.0.0.1/drupal
+
+  - drush dl mailsystem-$MAILSYSTEM_VERSION -y
+  - drush en -y netsmtp
+
+  - drush dl composer_manager
+  - php modules/composer_manager/scripts/init.php
+  - composer drupal-update
+
+  - drush cr
+  - export DRUPAL_DIR=$(drush dd)
+
+script:
+  - cd modules/drupal-netsmtp/src/Tests/Integration && drush scr runtests.php

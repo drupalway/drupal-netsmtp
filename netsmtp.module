@@ -4,30 +4,21 @@
  * Net SMTP module.
  */
 
+define('NETSMTP_SETTINGS', 'netsmtp.settings');
+
+use Drupal\Core\Url;
+
 /**
- * Implements hook_boot().
+ * Implements hook_mail().
  */
-function netsmtp_boot() {
-  if (!variable_get('netsmtp_autoload_disable')) {
-    spl_autoload_register(function ($name) {
-      // This is rudimentary, but it works fine.
-      if ('Net_SMTP' === $name) {
-        return include_once __DIR__ . '/lib/Net/SMTP.php';
-      } else if ('Net_Socket' === $name) {
-        return include_once __DIR__ . '/lib/Net/Socket.php';
-      } else if ('PEAR' === $name) {
-        return include_once __DIR__ . '/lib/PEAR.php';
-      } else if ('PEAR5' === $name) {
-        return include_once __DIR__ . '/lib/PEAR5.php';
-      } else if ('NetStmp_DrupalMailSystem' === $name) {
-        return include_once __DIR__ . '/lib/NetSmtp/DrupalMailSystem.php';
-      } else if ('NetSmtp_MailSystemProxy' === $name) {
-        return include_once __DIR__ . '/lib/NetSmtp/MailSystemProxy.php';
-      } else if ('NetSmtp_RawFormatter' === $name) {
-        return include_once __DIR__ . '/lib/NetSmtp/RawFormatter.php';
-      }
-      return false;
-    });
+function netsmtp_mail($key, &$message) {
+  switch ($key) {
+    case 'test_message':
+      $uuid = \Drupal\Component\Uuid\Php::generate();
+      $message['subject'] = 'uniq-mailtrap-id:' . $uuid;
+      \Drupal::state()->set('netsmtp.last_message_id', $message['subject']);
+      $message['body'][] = t('Testing Net Smtp mailer.');
+      break;
   }
 }
 
@@ -35,10 +26,10 @@ function netsmtp_boot() {
  * Implements hook_mail_alter().
  */
 function netsmtp_mail_alter(&$message) {
+  $config = \Drupal::config(NETSMTP_SETTINGS);
 
-  if (variable_get('netsmtp_debug_trace', false)) {
-
-    $path = variable_get('netsmtp_debug_trace_path', 'temporary://netsmtp');
+  if ($config->get('netsmtp_debug_trace')) {
+    $path = $config->get('netsmtp_debug_trace_path');
     file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
     $filename = $path . '/netsmtp-trace-' . date('Y-m-d') . '.log';
 
@@ -53,19 +44,19 @@ function netsmtp_mail_alter(&$message) {
     $data[] = ob_get_clean();
     $data[] = '';
 
-    file_put_contents($filename, implode("\n", $data), FILE_APPEND | LOCK_EX );
+    file_put_contents($filename, implode("\n", $data), FILE_APPEND | LOCK_EX);
   }
 
-  if ($recipient = variable_get('netsmtp_catch', array())) {
+  if ($recipient = $config->get('netsmtp_catch')) {
 
-    $message['headers']['X-Catched-Mail-Key'] = isset($message['id']) ? $message['id'] : null;
-    $message['headers']['X-Catched-Website'] = url('<front>', array('absolute' => true));
+    $front_page_url = Url::fromUri('base:/', ['absolute' => TRUE]);
+    $message['headers']['X-Catched-Mail-Key'] = isset($message['id']) ? $message['id'] : NULL;
+    $message['headers']['X-Catched-Website'] = $front_page_url->toString();
     $message['headers']['X-Catched-Original-To'] = $message['to'];
     $message['to'] = is_array($recipient) ? implode(',', $recipient) : $recipient;
 
     foreach ($message['headers'] as $header => $value) {
       switch (strtolower($header)) {
-
         case 'cc':
         case 'bcc':
           unset($message['headers'][$header]);
