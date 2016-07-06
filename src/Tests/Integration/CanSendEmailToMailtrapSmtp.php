@@ -69,16 +69,20 @@ class CanSendEmailToMailtrapSmtp {
    * This object later will be used by NetSmtpMail::__construct().
    */
   private function createSmtpConfig() {
-    $config = \Drupal::configFactory()->getEditable('netsmtp.settings');
+    \Drupal::configFactory()
+      ->getEditable('mailsystem.settings')
+      ->set('defaults.sender', 'netsmtp_mail')
+      ->set('defaults.formatter','php_mail')
+      ->save();
 
-    $config
+    \Drupal::configFactory()
+      ->getEditable('netsmtp.settings')
       ->set('providers.netsmtp.test_message.hostname', NETSMTP_MAILTRAP_SMTP_HOSTNAME)
       ->set('providers.netsmtp.test_message.port', NETSMTP_MAILTRAP_SMTP_PORT)
       ->set('providers.netsmtp.test_message.use_ssl', FALSE)
       ->set('providers.netsmtp.test_message.username', $this->smtpUserName)
-      ->set('providers.netsmtp.test_message.password', $this->smtpPassword);
-
-    $config->save();
+      ->set('providers.netsmtp.test_message.password', $this->smtpPassword)
+      ->save();
   }
 
   /**
