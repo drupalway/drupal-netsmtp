@@ -40,14 +40,15 @@ install:
   - composer global require --no-interaction "hirak/prestissimo:^0.3"
   - phpenv rehash
 
-  - mysql -e 'create database drupal;'
-
   - cd ..
   - drush dl drupal-$DRUPAL_VERSION --drupal-project-rename=drupal
   - mv drupal-netsmtp drupal/modules
   - cd drupal
   # Install drupal default profile
-  - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database drupal;'
+  - php -d sendmail_path=`which true` ~/.composer/vendor/bin/drush.php --yes core-quick-drupal --profile=testing --no-server --verbose --db-url=mysql://root:@127.0.0.1/drupal
+
   - drush dl mailsystem-$MAILSYSTEM_VERSION -y
   - drush en -y netsmtp
 
