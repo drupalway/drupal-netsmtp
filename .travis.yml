@@ -50,6 +50,11 @@ install:
   - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
   - drush dl mailsystem-$MAILSYSTEM_VERSION -y
   - drush en -y netsmtp
+
+  - drush dl composer_manager
+  - php modules/composer_manager/scripts/init.php
+  - composer drupal-update
+
   - drush cr
   - export DRUPAL_DIR=$(drush dd)
 
