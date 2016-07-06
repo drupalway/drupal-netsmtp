@@ -36,6 +36,12 @@ class NetSmtpMail implements MailInterface {
    * Default provider key.
    */
   const PROVIDER_DEFAULT = 'default';
+
+  /**
+   *  Provider config key.
+   */
+  const PROVIDER_CONFIG_KEY = 'providers';
+
   /**
    * Default SSL port.
    */
@@ -53,17 +59,15 @@ class NetSmtpMail implements MailInterface {
   /**
    * Configuration handler.
    *
-   * @var \Drupal\Core\Config\ImmutableConfig
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
-  private $config;
+  protected $config;
 
   /**
    * NetSmtpMail constructor.
    */
   public function __construct() {
-    // Fuck hate PEAR.
-    $this->PEAR = new PEAR();
-    $this->config = \Drupal::config('netsmtp.settings');
+    $this->config = \Drupal::configFactory()->get('netsmtp.settings');
   }
 
   /**
@@ -82,7 +86,6 @@ class NetSmtpMail implements MailInterface {
     $ret = [];
 
     if (empty($string)) {
-      // Please bitch... Not my problem.
       return NULL;
     }
 
@@ -154,15 +157,14 @@ class NetSmtpMail implements MailInterface {
   protected function getInstance($module, $key) {
     $is_tls = FALSE;
 
-    // SMTP server configurations per module, key.
     $server_id_list = [
-      $module . '.' . $key,
-      $module,
-      $key,
-      self::PROVIDER_DEFAULT,
+      self::PROVIDER_CONFIG_KEY . '.' . $module . '.' . $key,
+      self::PROVIDER_CONFIG_KEY . '.' . $module,
+      self::PROVIDER_CONFIG_KEY . '.' . $key,
+      self::PROVIDER_CONFIG_KEY . '.' . self::PROVIDER_DEFAULT
     ];
 
-    foreach ($server_id_list as $provider) {
+    foreach($server_id_list as $provider) {
       $provider_config = $this->config->get($provider);
       if (!is_null($provider_config)) {
         break;
@@ -170,7 +172,7 @@ class NetSmtpMail implements MailInterface {
     }
 
     if (empty($provider_config) && isset($provider)) {
-      $this->setError(sprintf("Provider '%s' does not exists, fallback on default", $provider), 'warning');
+      $this->setError(sprintf("Provider '%s' does not exists", $provider), 'warning');
       return NULL;
     }
 
@@ -181,9 +183,9 @@ class NetSmtpMail implements MailInterface {
 
     $info = array_filter($provider_config) + [
       'port'      => NULL,
-      'username'  => NULL,
       'use_ssl'   => FALSE,
       'password'  => '',
+      'username'  => NULL,
       'localhost' => NULL,
     ];
 
@@ -213,7 +215,6 @@ class NetSmtpMail implements MailInterface {
         return NULL;
       }
     }
-    // Finally! We did it I guess.
     return $smtp;
   }
 
@@ -229,6 +230,8 @@ class NetSmtpMail implements MailInterface {
    * {@inheritdoc}
    */
   public function mail(array $message) {
+    $this->PEAR = new PEAR();
+
     if (!$smtp = $this->getInstance($message['module'], $message['key'])) {
       return FALSE;
     }

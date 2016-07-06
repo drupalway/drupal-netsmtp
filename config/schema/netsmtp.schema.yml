@@ -24,7 +24,38 @@ netsmtp.settings:
 
     netsmtp_catch:
       type: sequence
-        label: 'Re-route emails'
+      label: 'Re-route emails'
+      sequence:
+        type: email
+        label: 'Re-route email'
+    providers:
+      type: sequence
+      label: List of modules
+      sequence:
+        type: sequence
+        label: List of keys for a given module
         sequence:
-          type: email
-          label: 'Re-route email'
+          type: mapping
+          label: Per module/key setting.
+          mapping:
+            hostname:
+              type: string
+              label: 'Hostname'
+            port:
+              type: string
+              label: 'port'
+            use_ssl:
+              type: string
+              label: 'ssl or tls'
+              description: 'true/false for "ssl" & tls to use "tls".'
+            username:
+              type: string
+              label: 'Username'
+            password:
+              type: string
+              label: 'Password'
+            localhost:
+              type: string
+              label: 'Localhost'
+              description: 'The value to give when sending EHLO or HELO.'
+

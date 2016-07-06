@@ -9,9 +9,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 $drupal_dir = getenv('DRUPAL_DIR');
 
-static $kernel;
+//static $kernel;
 
-if (!isset($kernel) || !($kernel instanceof DrupalKernel)) {
+/*if (!isset($kernel) || !($kernel instanceof DrupalKernel)) {
   require_once $drupal_dir . '/core/includes/database.inc';
   require_once $drupal_dir . '/core/includes/schema.inc';
 
@@ -21,8 +21,8 @@ if (!isset($kernel) || !($kernel instanceof DrupalKernel)) {
   $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod');
   $kernel->boot();
   $kernel->prepareLegacyRequest($request);
-}
+}*/
 
-require_once './CanSendEmailToMailtrapSmtp.php';
-$mailer = new \Drupal\netsmtp\Tests\Integration\CanSendEmailToMailtrapSmtp($kernel);
+//require_once './CanSendEmailToMailtrapSmtp.php';
+$mailer = new \Drupal\netsmtp\Tests\Integration\CanSendEmailToMailtrapSmtp();
 $mailer->testSendEmail();

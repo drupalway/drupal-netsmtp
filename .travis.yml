@@ -46,12 +46,12 @@ install:
   - drush dl drupal-$DRUPAL_VERSION --drupal-project-rename=drupal
   - mv drupal-netsmtp drupal/modules
   - cd drupal
-  - export DRUPAL_DIR=$(pwd)
   # Install drupal default profile
   - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
   - drush dl mailsystem-$MAILSYSTEM_VERSION -y
   - drush en -y netsmtp
   - drush cr
+  - export DRUPAL_DIR=$(drush dd)
 
 script:
-  - cd modules/drupal-netsmtp/src/Tests/Integration && php -e -f runtests.php
+  - cd modules/drupal-netsmtp/src/Tests/Integration && drush scr runtests.php

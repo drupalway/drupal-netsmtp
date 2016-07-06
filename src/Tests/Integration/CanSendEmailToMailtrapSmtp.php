@@ -10,6 +10,8 @@ use Drupal\Core\DrupalKernel;
 use GuzzleHttp\Client;
 
 define('NETSMTP_MAILTRAP_API_ENDPOINT', 'https://mailtrap.io/api/v1');
+define('NETSMTP_MAILTRAP_SMTP_HOSTNAME', 'mailtrap.io');
+define('NETSMTP_MAILTRAP_SMTP_PORT', 465);
 
 /**
  * Class CanSendEmailToMailtrapSmtp.
@@ -28,13 +30,13 @@ class CanSendEmailToMailtrapSmtp {
    *
    * @var string
    */
-  private $smtpToken;
+  private $apiToken;
   /**
    * Inbox ID.
    *
    * @var string
    */
-  private $smtpInboxId;
+  private $apiInboxId;
   /**
    * Mail manager.
    *
@@ -44,16 +46,46 @@ class CanSendEmailToMailtrapSmtp {
 
   /**
    * CanSendEmailToMailtrapSmtp constructor.
-   *
-   * @param DrupalKernel $kernel
-   *   Drupal Kernel.
    */
-  public function __construct(DrupalKernel $kernel) {
+  public function __construct() {
     // Prepare the initial properties.
-    $this->kernel       = $kernel;
-    $this->mailManager  = $this->kernel->getContainer()->get('plugin.manager.mail');
-    $this->smtpInboxId  = getenv('MAILTRAP_INBOX_ID');
-    $this->smtpToken    = getenv('MAILTRAP_TOKEN');
+    $this->apiInboxId   = getenv('MAILTRAP_INBOX_ID');
+    $this->apiToken     = getenv('MAILTRAP_TOKEN');
+    $this->smtpUserName = getenv('MAILTRAP_SMTP_USERNAME');
+    $this->smtpPassword = getenv('MAILTRAP_SMTP_PASSWORD');
+
+    // We need this before initMailManager(),
+    // to properly construct a netsmtp_mail plugin.
+    $this->createSmtpConfig(
+      $this->smtpUserName,
+      $this->smtpPassword
+    );
+    $this->initMailManager();
+  }
+
+  /**
+   * Construct mailtrap smtp config object.
+   *
+   * This object later will be used by NetSmtpMail::__construct().
+   */
+  private function createSmtpConfig() {
+    $config = \Drupal::configFactory()->getEditable('netsmtp.settings');
+
+    $config
+      ->set('providers.netsmtp.test_message.hostname', NETSMTP_MAILTRAP_SMTP_HOSTNAME)
+      ->set('providers.netsmtp.test_message.port', NETSMTP_MAILTRAP_SMTP_PORT)
+      ->set('providers.netsmtp.test_message.use_ssl', FALSE)
+      ->set('providers.netsmtp.test_message.username', $this->smtpUserName)
+      ->set('providers.netsmtp.test_message.password', $this->smtpPassword);
+
+    $config->save();
+  }
+
+  /**
+   * Get current mail manager.
+   */
+  private function initMailManager() {
+    $this->mailManager = \Drupal::getContainer()->get('plugin.manager.mail');
   }
 
   /**
@@ -61,27 +93,29 @@ class CanSendEmailToMailtrapSmtp {
    */
   public function testSendEmail() {
     try {
-      $result = $this->mailManager->mail('netsmtp', 'test_message');
-      $message_key = \Drupal::state()->get('netsmtp.last_message_id');
+      $this->mailManager->mail('netsmtp', 'test_message', 'netsmtp@example.com', []);
     }
-    catch (\Exception $e) {
+    catch (\RuntimeException $e) {
+      file_put_contents('php://stderr', $e->getTraceAsString());
       file_put_contents('php://stderr', sprintf('Can\'t send an email. Details: %s', $e->getMessage()));
       exit(1);
     }
 
+    $message_key = \Drupal::state()->get('netsmtp.last_message_id');
+
     $inbox_url = implode('/', [
       NETSMTP_MAILTRAP_API_ENDPOINT,
       'inboxes',
-      $this->smtpInboxId,
+      $this->apiInboxId,
     ]);
 
     $client = new Client([
       'base_uri' => $inbox_url . '/',
+      'headers' => ['Api-Token' => $this->apiToken],
     ]);
 
     $response = $client->request('GET', 'messages', [
       'query'   => ['search' => $message_key],
-      'headers' => ['Api-Token' => $this->smtpToken],
     ]);
 
     $data = \GuzzleHttp\json_decode($response->getBody()->getContents());
@@ -96,6 +130,9 @@ class CanSendEmailToMailtrapSmtp {
       sprintf('There is no email with email subject: %s', $message_key);
       exit(1);
     }
+    var_dump('mail_id: ' . $mail->id);
+    $response = $client->request('GET', "messages/$mail->id/body.raw");
+    var_dump($data = ($response->getBody()->getContents()));
   }
 
 }
