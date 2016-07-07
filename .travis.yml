@@ -28,6 +28,8 @@ mysql:
   encoding: utf8
 
 before_install:
+  - export MAILSYSTEM_VERSION="8.x-4.0"
+  - test ${DRUPAL_VERSION} == "8" || export MAILSYSTEM_VERSION="8.x-4.x-dev"
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
   - composer self-update
 
@@ -38,17 +40,23 @@ install:
   - composer global require --no-interaction "hirak/prestissimo:^0.3"
   - phpenv rehash
 
-  - mysql -e 'create database drupal;'
-
   - cd ..
   - drush dl drupal-$DRUPAL_VERSION --drupal-project-rename=drupal
   - mv drupal-netsmtp drupal/modules
   - cd drupal
-  - export DRUPAL_DIR=$(pwd)
-
   # Install drupal default profile
-  - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database drupal;'
+  - php -d sendmail_path=`which true` ~/.composer/vendor/bin/drush.php --yes core-quick-drupal --profile=testing --no-server --verbose --db-url=mysql://root:@127.0.0.1/drupal
+
+  - drush dl mailsystem-$MAILSYSTEM_VERSION -y
   - drush en -y netsmtp
 
+  - drush dl composer_manager
+  - php modules/composer_manager/scripts/init.php
+  - composer drupal-update
+
+  - drush cr
+
 script:
-  - cd modules/drupal-netsmtp/src/Tests/Integration && php -f runtests.php
+  - cd modules/drupal-netsmtp/src/Tests/Integration && drush scr runtests.php

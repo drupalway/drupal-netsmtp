@@ -20,6 +20,6 @@
     "source": "https://github.com/pear/Mail"
   },
   "require": {
-    "pear/net_smtp": "*"
+    "pear/net_smtp": "^1.7"
   }
 }
