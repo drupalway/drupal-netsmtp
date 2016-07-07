@@ -57,7 +57,6 @@ install:
   - composer drupal-update
 
   - drush cr
-  - export DRUPAL_DIR=$(drush dd)
 
 script:
   - cd modules/drupal-netsmtp/src/Tests/Integration && drush scr runtests.php
