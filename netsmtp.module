@@ -14,10 +14,10 @@ use Drupal\Core\Url;
 function netsmtp_mail($key, &$message) {
   switch ($key) {
     case 'test_message':
-      $uuid = \Drupal\Component\Uuid\Php::generate();
+      $uuid = @\Drupal\Component\Uuid\Php::generate();
       $message['subject'] = 'uniq-mailtrap-id:' . $uuid;
       \Drupal::state()->set('netsmtp.last_message_id', $message['subject']);
-      $message['body'][] = t('Testing Net Smtp mailer.');
+      $message['body'][] = t('Testing NetSMTP mailer');
       break;
   }
 }
