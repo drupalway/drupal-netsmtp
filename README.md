@@ -9,46 +9,66 @@ at the following URL:
 
     http://www.drupal.org/project/smtp
 
-But in real life, this modules attempts to use the PHPMailer library to connect
-to the SMTP server, which can found at:
-
-    https://github.com/PHPMailer/PHPMailer
+But in real life, this module attempts to use the [PHPMailer library](https://github.com/PHPMailer/PHPMailer) to connect
+to the SMTP server.
 
 If you look at it a bit more, you'll see that PHPMailer is not an SMTP
 connector, while it can, its main goal is to format the MIME messages for
 you.
 
-Whenever you use Drupal with a module such as MIMEMail which can be found at:
-
-    http://www.drupal.org/project/mimemail
-
+Whenever you use Drupal with a module such as [MIMEMail](http://www.drupal.org/project/mimemail),
 you'll notice that your messages are already well formatted in a very precise
-and valid MIME enveloppe.
+and valid MIME envelope.
 
 *What happens behind this scenario is that the SMTP module needs to deconstruct
 the valid MIME encoded message in order to be able to use the PHPMailer API
 which then will attempt to rebuild a MIME message.*
 
-In real life, it does not, it does deconstrut your MIME encoded message, but in
-a very wrong way, and breaks it in a lot cases.
+In real life, it does not, it does deconstruct your MIME encoded message, but in
+a very wrong way, and breaks it in a lot of cases.
 
 ## Requirements
 
 [Mailsystem](https://www.drupal.org/project/mailsystem)
 
-Used to allow using of different backends for formatting and sending e-mails by default, per module and per mail key.
+Used to provide different backends for formatting and sending e-mails by default, per module and per mail key.
 
 Soft dependency on [composer_manager](https://www.drupal.org/project/composer_manager)
  
 ## Installation
+
+### Installation on [Drupal Project](https://github.com/drupal-composer/drupal-project)
+
+- In root folder add dependencies to composer.json:
+
+        composer require drupal/netsmtp drupal/mailsystem
+
+- Go to `web/` folder and enable netsmtp module:
+
+        drush en netsmtp -y
+
+### Installation on standard drupal
+
 This module defines external non-drupal dependencies via composer.json, 
 so you can use a drupal module [composer_manager](https://www.drupal.org/project/composer_manager) to install dependencies.
 
 **Procedure**
 
-- Download this module, composer_manager, mailsystem modules to the `modules/contrib` dir or similar.
-- Enable composer_manager module && clear cache
-- Enable netsmtp module
+- Download this module, composer_manager, mailsystem modules to the `modules/contrib` dir or similar:
+
+        drush pmi netsmtp, composer_manager, mailsystem -y
+
+- Enable composer_manager module && run install script && clear cache:
+
+        drush en composer_manager -y && php PATH_TO_COMPOSER_MANAGER_MODULE/scripts/init.php && drush cr
+
+- Enable netsmtp & mailsystem modules:
+
+        drusn en netsmtp, mailsystem -y
+
+- Update root `composer.json` file:
+
+        composer drupal-update
 
 
 ## Runtime configuration
@@ -84,7 +104,7 @@ You can set the formatter this way:
 
 At minimal you would need to specify your SMTP server host:
 
-    $config['netsmtp.settings'] = [
+    $config['netsmtp.settings']['providers'] = [
       'default' => [
         'hostname' => '1.2.3.4'
       ],
@@ -98,7 +118,7 @@ You can set the port if you wish using the 'port' key.
 
 If you need authentication, use this:
 
-    $config['netsmtp.settings'] = [
+    $config['netsmtp.settings']['providers'] = [
       'default' => [
         'hostname' => 'smtp.provider.net',
         'username' => 'john',
@@ -111,7 +131,7 @@ than the current localhost.localdomain, you can set the 'localhost' variable.
 
 An complete example:
 
-    $config['netsmtp.settings'] = [
+    $config['netsmtp.settings']['providers'] = [
       'default' => [
         'hostname'  => 'smtp.provider.net',
         'port'      => 465,
@@ -135,7 +155,7 @@ library to do a TLS connection instead.
 Additionally you can define a set of servers, for example if you need a
 mailjet or mandrill connection:
 
-    $config['netsmtp.settings'] = [
+    $config['netsmtp.settings']['providers'] = [
       'default' => [
         'host' => '1.2.3.4',
         'ssl'  => true,
